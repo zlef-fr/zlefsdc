@@ -1,0 +1,2 @@
+option('xfce', type: 'feature', value: 'auto',
+  description: 'Build the xfce4-panel plugin host (needs libxfce4panel-2.0 + libxfce4ui-2)')

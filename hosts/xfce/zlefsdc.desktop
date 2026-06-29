@@ -1,0 +1,9 @@
+[Xfce Panel]
+Type=X-XFCE-PanelPlugin
+Name=ZlefSDC
+Name[fr]=ZlefSDC
+Comment=Show and control the current Spotify (or any MPRIS) track from the panel
+Comment[fr]=Afficher et contrôler la piste Spotify (ou MPRIS) en cours depuis le panneau
+Icon=multimedia-player
+X-XFCE-Module=zlefsdc
+X-XFCE-Internal=FALSE

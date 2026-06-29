@@ -1,0 +1,3 @@
+core/zlefsdc-prefs.c
+hosts/standalone/zlefsdc-standalone.c
+hosts/xfce/zlefsdc-xfce.c

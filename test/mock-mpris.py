@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Minimal MPRIS2 player for testing ZlefSDC without a real Spotify.
+
+Owns org.mpris.MediaPlayer2.spotify on the session bus and serves enough of the
+MediaPlayer2 + MediaPlayer2.Player interfaces (Metadata, PlaybackStatus,
+PlayPause/Next/Previous, CanGoNext/Prev) for the widget to render and drive.
+"""
+import sys
+import dbus
+import dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
+from gi.repository import GLib
+
+BUS = "org.mpris.MediaPlayer2.spotify"
+PATH = "/org/mpris/MediaPlayer2"
+ROOT = "org.mpris.MediaPlayer2"
+PLAYER = "org.mpris.MediaPlayer2.Player"
+
+ART = sys.argv[1] if len(sys.argv) > 1 else ""
+
+TRACKS = [
+    ("Midnight City", ["M83"], "Hurry Up, We're Dreaming"),
+    ("Strobe", ["deadmau5"], "For Lack of a Better Name"),
+    ("Nightcall", ["Kavinsky", "Lovefoxxx"], "OutRun"),
+]
+
+
+class Player(dbus.service.Object):
+    def __init__(self, bus):
+        super().__init__(bus, PATH)
+        self.i = 0
+        self.status = "Playing"
+
+    # --- Properties -------------------------------------------------------
+    def metadata(self):
+        t, artists, album = TRACKS[self.i]
+        m = {
+            "mpris:trackid": dbus.ObjectPath("/track/%d" % self.i),
+            "mpris:length": dbus.Int64(231_000_000),
+            "xesam:title": t,
+            "xesam:artist": dbus.Array(artists, signature="s"),
+            "xesam:album": album,
+        }
+        if ART:
+            m["mpris:artUrl"] = ART
+        return dbus.Dictionary(m, signature="sv")
+
+    @dbus.service.method("org.freedesktop.DBus.Properties",
+                         in_signature="ss", out_signature="v")
+    def Get(self, iface, prop):
+        return self.GetAll(iface).get(prop)
+
+    @dbus.service.method("org.freedesktop.DBus.Properties",
+                         in_signature="s", out_signature="a{sv}")
+    def GetAll(self, iface):
+        if iface == ROOT:
+            return dbus.Dictionary({
+                "Identity": "Spotify",
+                "DesktopEntry": "spotify",
+                "CanRaise": True,
+            }, signature="sv")
+        if iface == PLAYER:
+            return dbus.Dictionary({
+                "PlaybackStatus": self.status,
+                "Metadata": self.metadata(),
+                "CanGoNext": True,
+                "CanGoPrevious": True,
+                "CanPlay": True,
+                "CanPause": True,
+                "Position": dbus.Int64(42_000_000),
+            }, signature="sv")
+        return dbus.Dictionary({}, signature="sv")
+
+    @dbus.service.signal("org.freedesktop.DBus.Properties",
+                         signature="sa{sv}as")
+    def PropertiesChanged(self, iface, changed, invalidated):
+        pass
+
+    def _emit(self):
+        self.PropertiesChanged(PLAYER, {
+            "PlaybackStatus": self.status,
+            "Metadata": self.metadata(),
+        }, [])
+
+    # --- Root -------------------------------------------------------------
+    @dbus.service.method(ROOT)
+    def Raise(self):
+        print("Raise()", flush=True)
+
+    # --- Player methods ---------------------------------------------------
+    @dbus.service.method(PLAYER)
+    def PlayPause(self):
+        self.status = "Paused" if self.status == "Playing" else "Playing"
+        print("PlayPause ->", self.status, flush=True)
+        self._emit()
+
+    @dbus.service.method(PLAYER)
+    def Next(self):
+        self.i = (self.i + 1) % len(TRACKS)
+        print("Next ->", TRACKS[self.i][0], flush=True)
+        self._emit()
+
+    @dbus.service.method(PLAYER)
+    def Previous(self):
+        self.i = (self.i - 1) % len(TRACKS)
+        print("Previous ->", TRACKS[self.i][0], flush=True)
+        self._emit()
+
+    @dbus.service.method(PLAYER)
+    def Stop(self):
+        self.status = "Stopped"
+        self._emit()
+
+
+def main():
+    DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+    name = dbus.service.BusName(BUS, bus)
+    Player(bus)
+    print("mock MPRIS up on", BUS, "art=" + (ART or "(none)"), flush=True)
+    GLib.MainLoop().run()
+
+
+if __name__ == "__main__":
+    main()

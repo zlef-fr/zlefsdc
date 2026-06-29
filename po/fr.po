@@ -1,0 +1,188 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: zlefsdc 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Nothing"
+msgstr "Rien"
+
+msgid "Play / Pause"
+msgstr "Lecture / Pause"
+
+msgid "Next track"
+msgstr "Piste suivante"
+
+msgid "Previous track"
+msgstr "Piste précédente"
+
+msgid "Stop"
+msgstr "Arrêter"
+
+msgid "Raise player window"
+msgstr "Afficher la fenêtre du lecteur"
+
+msgid "Run custom command"
+msgstr "Exécuter une commande personnalisée"
+
+msgid "Elements"
+msgstr "Éléments"
+
+msgid "Show"
+msgstr "Afficher"
+
+msgid "Album cover"
+msgstr "Pochette de l'album"
+
+msgid "App icon"
+msgstr "Icône de l'application"
+
+msgid "Title"
+msgstr "Titre"
+
+msgid "Artist"
+msgstr "Artiste"
+
+msgid "Album"
+msgstr "Album"
+
+msgid "Previous button"
+msgstr "Bouton précédent"
+
+msgid "Play/Pause button"
+msgstr "Bouton lecture/pause"
+
+msgid "Next button"
+msgstr "Bouton suivant"
+
+msgid "Progress bar"
+msgstr "Barre de progression"
+
+msgid "Layout"
+msgstr "Disposition"
+
+msgid "Arrangement"
+msgstr "Agencement"
+
+msgid ""
+"Order (comma-separated):\n"
+"cover,icon,info,prev,playpause,next,progress"
+msgstr ""
+"Ordre (séparé par des virgules) :\n"
+"cover,icon,info,prev,playpause,next,progress"
+
+msgid "Spacing (px)"
+msgstr "Espacement (px)"
+
+msgid "Title & artist inline"
+msgstr "Titre et artiste sur une ligne"
+
+msgid "Cover"
+msgstr "Pochette"
+
+msgid "Size (px, 0 = fit panel)"
+msgstr "Taille (px, 0 = ajuster au panneau)"
+
+msgid "Corner radius (px)"
+msgstr "Rayon des coins (px)"
+
+msgid "Text"
+msgstr "Texte"
+
+msgid "Format  (%t title · %a artist · %b album)"
+msgstr "Format  (%t titre · %a artiste · %b album)"
+
+msgid "Title format"
+msgstr "Format du titre"
+
+msgid "Artist format"
+msgstr "Format de l'artiste"
+
+msgid "Artist separator"
+msgstr "Séparateur d'artistes"
+
+msgid "Placeholder (idle)"
+msgstr "Texte par défaut (inactif)"
+
+msgid "Style"
+msgstr "Style"
+
+msgid "Max characters (0 = unlimited)"
+msgstr "Caractères max (0 = illimité)"
+
+msgid "Scroll long text (marquee)"
+msgstr "Faire défiler le texte long"
+
+msgid "Font (e.g. \"Sans Bold 10\")"
+msgstr "Police (ex. « Sans Bold 10 »)"
+
+msgid "Colour (CSS, blank = theme)"
+msgstr "Couleur (CSS, vide = thème)"
+
+msgid "Buttons"
+msgstr "Boutons"
+
+msgid "Icon size (px)"
+msgstr "Taille des icônes (px)"
+
+msgid "Symbolic icons"
+msgstr "Icônes symboliques"
+
+msgid "Flat (no frame)"
+msgstr "Plat (sans cadre)"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Player"
+msgstr "Lecteur"
+
+msgid "Target (\"spotify\", \"auto\", or bus name)"
+msgstr "Cible (« spotify », « auto » ou nom de bus)"
+
+msgid "Quick actions"
+msgstr "Actions rapides"
+
+msgid "Click cover"
+msgstr "Clic sur la pochette"
+
+msgid "Click title"
+msgstr "Clic sur le titre"
+
+msgid "Middle click"
+msgstr "Clic du milieu"
+
+msgid "Scroll up"
+msgstr "Molette vers le haut"
+
+msgid "Scroll down"
+msgstr "Molette vers le bas"
+
+msgid "Custom command"
+msgstr "Commande personnalisée"
+
+msgid "Behaviour"
+msgstr "Comportement"
+
+msgid "Hide when nothing plays"
+msgstr "Masquer quand rien ne joue"
+
+msgid "Show tooltip"
+msgstr "Afficher l'infobulle"
+
+msgid "ZlefSDC Preferences"
+msgstr "Préférences ZlefSDC"
+
+msgid "_Close"
+msgstr "_Fermer"
+
+msgid "Spotify Display Controls"
+msgstr "Contrôles d'affichage Spotify"
+
+msgid "ZlefSDC"
+msgstr "ZlefSDC"
