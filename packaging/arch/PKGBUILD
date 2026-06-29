@@ -1,0 +1,21 @@
+# Maintainer: zlef.fr <arch@zlef.fr>
+pkgname=zlefsdc
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Spotify Display Controls — now-playing panel widget (xfce4-panel) over MPRIS, with a DE-agnostic core"
+arch=('x86_64')
+url="https://sdc.zlef.fr"
+license=('GPL-2.0-or-later')
+depends=('gtk3' 'glib2' 'xfce4-panel' 'libxfce4ui')
+makedepends=('meson' 'ninja' 'git' 'gettext' 'pkgconf')
+source=("git+https://github.com/zlef-fr/zlefsdc.git#tag=v${pkgver}")
+sha256sums=('SKIP')
+
+build() {
+  meson setup "$pkgname" build --prefix=/usr --buildtype=release
+  meson compile -C build
+}
+
+package() {
+  DESTDIR="$pkgdir" meson install -C build
+}

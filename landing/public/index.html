@@ -6,10 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ZlefSDC — Spotify Display Controls for your panel</title>
 <meta name="description" content="A panel widget that shows your current Spotify track — cover, title, artist — with play/pause, previous and next. Real-time over MPRIS (works with any player), endlessly configurable, with a desktop-agnostic core. First host: xfce4-panel.">
-<link rel="canonical" href="https://zlefsdc.zlef.fr/">
+<link rel="canonical" href="https://sdc.zlef.fr/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ZlefSDC">
-<meta property="og:url" content="https://zlefsdc.zlef.fr/">
+<meta property="og:url" content="https://sdc.zlef.fr/">
 <meta property="og:title" content="ZlefSDC — Spotify Display Controls for your panel">
 <meta property="og:description" content="Now-playing cover + transport controls in your panel, over MPRIS. Configure everything; drive any player. xfce4-panel plugin with a reusable, DE-agnostic core.">
 <meta property="og:image" content="https://assets.zlef.fr/og-default.png">
@@ -26,7 +26,7 @@
 <!--/zlef-seo-->
 <meta name="theme-color" content="#06060a">
 <link rel="stylesheet" href="https://da.zlef.fr/tokens.css">
-<link rel="stylesheet" href="/css/landing.css?v=1">
+<link rel="stylesheet" href="/css/landing.css?v=3">
 </head>
 <body class="zl-body">
 <canvas class="bg" id="bg" aria-hidden="true"></canvas>
@@ -102,38 +102,58 @@
 
   <section class="wrap section" id="settings">
     <h2 data-i18n="set_title">Control the entire render</h2>
-    <p class="sub" data-i18n="set_sub">Everything below lives in a simple settings panel — and updates the widget instantly.</p>
-    <ul class="chips">
-      <li data-i18n="s_elements">Show/hide each element</li>
-      <li data-i18n="s_order">Free element order</li>
-      <li data-i18n="s_cover">Cover size &amp; radius</li>
-      <li data-i18n="s_format">%t / %a / %b text format</li>
-      <li data-i18n="s_marquee">Marquee / ellipsis</li>
-      <li data-i18n="s_font">Custom font &amp; colour</li>
-      <li data-i18n="s_buttons">Symbolic / flat buttons</li>
-      <li data-i18n="s_progress">Progress bar</li>
-      <li data-i18n="s_actions">Click &amp; scroll actions</li>
-      <li data-i18n="s_target">Player target</li>
-    </ul>
+    <p class="sub" data-i18n="set_sub">Same widget, same settings panel — four configurations. Each of these is a real render; tweak the controls and yours updates instantly.</p>
+    <div class="examples">
+      <figure class="ex">
+        <div class="ex-shot"><img src="/assets/examples/full.png" alt="ZlefSDC with cover, title, artist, album, transport buttons and progress bar" loading="lazy"></div>
+        <figcaption><strong data-i18n="ex_full_t">Everything on</strong><span data-i18n="ex_full_d">Cover, metadata, transport and a progress bar.</span><code>order=cover,info,prev,playpause,next,progress</code></figcaption>
+      </figure>
+      <figure class="ex">
+        <div class="ex-shot"><img src="/assets/examples/compact.png" alt="Compact ZlefSDC: small round cover, title and a single play button" loading="lazy"></div>
+        <figcaption><strong data-i18n="ex_compact_t">Minimal</strong><span data-i18n="ex_compact_d">A small round cover, the title, one button.</span><code>cover.radius=20 · order=cover,info,playpause</code></figcaption>
+      </figure>
+      <figure class="ex">
+        <div class="ex-shot"><img src="/assets/examples/textonly.png" alt="ZlefSDC without cover: app icon, inline title and artist, transport controls" loading="lazy"></div>
+        <figcaption><strong data-i18n="ex_textonly_t">No cover</strong><span data-i18n="ex_textonly_d">App icon, inline title · artist, full transport.</span><code>show.cover=false · info_inline=true</code></figcaption>
+      </figure>
+      <figure class="ex">
+        <div class="ex-shot"><img src="/assets/examples/tinted.png" alt="ZlefSDC with custom olive text colour, cover, play button and progress bar" loading="lazy"></div>
+        <figcaption><strong data-i18n="ex_tinted_t">Themed</strong><span data-i18n="ex_tinted_d">Custom text colour and layout, with progress.</span><code>text.color=#7e8a3f</code></figcaption>
+      </figure>
+    </div>
   </section>
 
   <section class="wrap section" id="install">
     <h2 data-i18n="inst_title">Install</h2>
-    <p class="sub" data-i18n="inst_sub">Needs GTK 3, GLib/GIO, and for the panel plugin: libxfce4panel-2.0 + libxfce4ui-2.</p>
+    <p class="sub" data-i18n="inst_sub">From the signed zlef package repositories — or build it from source.</p>
 
-    <h3 class="step" data-i18n="inst_build">1 · Build &amp; install</h3>
+    <h3 class="step" data-i18n="inst_deb">Debian / Ubuntu — apt.zlef.fr</h3>
+    <pre class="code"><code>curl -fsSL https://apt.zlef.fr/zlef.gpg | sudo tee /usr/share/keyrings/zlef.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/zlef.gpg] https://apt.zlef.fr stable main" \
+  | sudo tee /etc/apt/sources.list.d/zlef.list
+sudo apt update
+sudo apt install zlefsdc</code></pre>
+
+    <h3 class="step" data-i18n="inst_arch">Arch — arch.zlef.fr</h3>
+    <pre class="code"><code>curl -fsSL https://arch.zlef.fr/zlef.gpg | sudo pacman-key --add -
+sudo pacman-key --lsign-key arch@zlef.fr
+printf '\n[zlef]\nSigLevel = Required\nServer = https://arch.zlef.fr/$arch\n' \
+  | sudo tee -a /etc/pacman.conf
+sudo pacman -Sy zlefsdc</code></pre>
+
+    <h3 class="step" data-i18n="inst_build">From source</h3>
     <pre class="code"><code>git clone https://github.com/zlef-fr/zlefsdc
 cd zlefsdc
 meson setup build
 ninja -C build
 sudo ninja -C build install</code></pre>
 
-    <h3 class="step" data-i18n="inst_add">2 · Add it to the panel</h3>
+    <h3 class="step" data-i18n="inst_add">Add it to the panel</h3>
     <p data-i18n="inst_add_d">In Xfce: <strong>Panel → Add New Items… → ZlefSDC</strong>. Right-click → Properties to open the settings.</p>
 
     <h3 class="step" data-i18n="inst_alt">No supported panel?</h3>
     <p data-i18n="inst_alt_d">Run the standalone window host — same widget, anywhere GTK runs:</p>
-    <pre class="code"><code>build/hosts/standalone/zlefsdc-standalone</code></pre>
+    <pre class="code"><code>zlefsdc-standalone</code></pre>
 
     <div class="cta-row">
       <a class="zl-btn zl-btn--primary" href="https://github.com/zlef-fr/zlefsdc" target="_blank" rel="noopener" data-i18n="inst_gh">Full docs on GitHub</a>
@@ -149,6 +169,6 @@ sudo ninja -C build install</code></pre>
 </footer>
 
 <script src="https://assets.zlef.fr/particles.js" defer></script>
-<script src="/js/i18n.js?v=1" defer></script>
+<script src="/js/i18n.js?v=3" defer></script>
 </body>
 </html>

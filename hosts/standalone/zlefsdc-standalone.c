@@ -41,26 +41,35 @@ int main (int argc, char **argv) {
 
   GtkWidget *win = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (win), "ZlefSDC");
-  gtk_window_set_default_size (GTK_WINDOW (win), 520, 80);
+  if (!g_getenv ("ZLEFSDC_BARE"))
+    gtk_window_set_default_size (GTK_WINDOW (win), 520, 80);
   g_signal_connect (win, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
-  GtkWidget *bar = gtk_header_bar_new ();
-  gtk_header_bar_set_title (GTK_HEADER_BAR (bar), "ZlefSDC");
-  gtk_header_bar_set_subtitle (GTK_HEADER_BAR (bar), _("Spotify Display Controls"));
-  gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (bar), TRUE);
-  GtkWidget *gear = gtk_button_new_from_icon_name ("preferences-system-symbolic", GTK_ICON_SIZE_BUTTON);
-  gtk_header_bar_pack_end (GTK_HEADER_BAR (bar), gear);
-  gtk_window_set_titlebar (GTK_WINDOW (win), bar);
-
+  /* ZLEFSDC_BARE=1 -> undecorated, content-sized window holding just the widget
+   * (used to capture clean per-config example tiles for the website). */
+  gboolean bare = g_getenv ("ZLEFSDC_BARE") != NULL;
   App app = { settings, win };
-  g_signal_connect (gear, "clicked", G_CALLBACK (open_prefs), &app);
+
+  if (!bare) {
+    GtkWidget *bar = gtk_header_bar_new ();
+    gtk_header_bar_set_title (GTK_HEADER_BAR (bar), "ZlefSDC");
+    gtk_header_bar_set_subtitle (GTK_HEADER_BAR (bar), _("Spotify Display Controls"));
+    gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (bar), TRUE);
+    GtkWidget *gear = gtk_button_new_from_icon_name ("preferences-system-symbolic", GTK_ICON_SIZE_BUTTON);
+    gtk_header_bar_pack_end (GTK_HEADER_BAR (bar), gear);
+    gtk_window_set_titlebar (GTK_WINDOW (win), bar);
+    g_signal_connect (gear, "clicked", G_CALLBACK (open_prefs), &app);
+  } else {
+    gtk_window_set_decorated (GTK_WINDOW (win), FALSE);
+    gtk_window_set_resizable (GTK_WINDOW (win), FALSE);
+  }
 
   ZlefsdcWidget *w = zlefsdc_widget_new (settings);
   zlefsdc_widget_set_orientation (w, GTK_ORIENTATION_HORIZONTAL);
   zlefsdc_widget_set_panel_size (w, 56);
 
   GtkWidget *frame = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-  g_object_set (frame, "margin", 10, NULL);
+  g_object_set (frame, "margin", bare ? 8 : 10, NULL);
   gtk_box_pack_start (GTK_BOX (frame), GTK_WIDGET (w), TRUE, TRUE, 0);
   gtk_container_add (GTK_CONTAINER (win), frame);
 

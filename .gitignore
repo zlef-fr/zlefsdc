@@ -2,3 +2,5 @@ build/
 *.o
 *.so
 .cache/
+packaging/*.deb
+*.pkg.tar.zst

@@ -59,10 +59,34 @@ change, so adding a host needs **no new rendering code**.
 
 Fully internationalized — English (default) and French.
 
-## Build & install
+## Install from the zlef package repos
+
+Prebuilt, signed packages are published to the zlef-wide repositories.
+
+**Debian / Ubuntu** (`apt.zlef.fr`):
+
+```bash
+curl -fsSL https://apt.zlef.fr/zlef.gpg | sudo tee /usr/share/keyrings/zlef.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/zlef.gpg] https://apt.zlef.fr stable main" \
+  | sudo tee /etc/apt/sources.list.d/zlef.list
+sudo apt update
+sudo apt install zlefsdc
+```
+
+**Arch** (`arch.zlef.fr`):
+
+```bash
+curl -fsSL https://arch.zlef.fr/zlef.gpg | sudo pacman-key --add -
+sudo pacman-key --lsign-key arch@zlef.fr
+printf '\n[zlef]\nSigLevel = Required\nServer = https://arch.zlef.fr/$arch\n' \
+  | sudo tee -a /etc/pacman.conf
+sudo pacman -Sy zlefsdc
+```
+
+## Build from source
 
 Requires GTK 3, GLib/GIO, and (for the panel plugin) `libxfce4panel-2.0` +
-`libxfce4ui-2`.
+`libxfce4ui-2` (plus `meson`, `ninja`, `gettext`).
 
 ```bash
 meson setup build
@@ -73,6 +97,8 @@ sudo ninja -C build install      # installs the plugin + standalone + locales
 The xfce plugin is built only where its dev files are present; the core library
 and standalone host build on any GTK desktop. To force it on/off:
 `meson setup build -Dxfce=enabled` (or `disabled`).
+
+Repackage with the helpers under `packaging/` (`build-deb.sh`, `arch/PKGBUILD`).
 
 After install, add it in Xfce: **Panel → Add New Items… → ZlefSDC**.
 
