@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--zlef-seo-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZlefSDC — Spotify Display Controls for your panel</title>
+<meta name="description" content="A panel widget that shows your current Spotify track — cover, title, artist — with play/pause, previous and next. Real-time over MPRIS (works with any player), endlessly configurable, with a desktop-agnostic core. First host: xfce4-panel.">
+<link rel="canonical" href="https://zlefsdc.zlef.fr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ZlefSDC">
+<meta property="og:url" content="https://zlefsdc.zlef.fr/">
+<meta property="og:title" content="ZlefSDC — Spotify Display Controls for your panel">
+<meta property="og:description" content="Now-playing cover + transport controls in your panel, over MPRIS. Configure everything; drive any player. xfce4-panel plugin with a reusable, DE-agnostic core.">
+<meta property="og:image" content="https://assets.zlef.fr/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ZlefSDC — Spotify Display Controls for your panel">
+<meta name="twitter:description" content="Now-playing cover + transport controls in your panel, over MPRIS. Drive any player; configure everything.">
+<meta name="twitter:image" content="https://assets.zlef.fr/og-default.png">
+<link rel="icon" href="https://assets.zlef.fr/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="https://assets.zlef.fr/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="https://assets.zlef.fr/apple-touch-icon.png">
+<link rel="manifest" href="https://assets.zlef.fr/site.webmanifest">
+<!--/zlef-seo-->
+<meta name="theme-color" content="#06060a">
+<link rel="stylesheet" href="https://da.zlef.fr/tokens.css">
+<link rel="stylesheet" href="/css/landing.css?v=1">
+</head>
+<body class="zl-body">
+<canvas class="bg" id="bg" aria-hidden="true"></canvas>
+
+<header class="hdr">
+  <div class="inner wrap">
+    <a class="brand" href="/" aria-label="ZlefSDC home">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.3" fill="currentColor"/>
+        </svg>
+      </span>
+      ZlefSDC
+    </a>
+    <nav class="nav">
+      <a href="#features" class="hide-sm" data-i18n="nav_features">Features</a>
+      <a href="#settings" class="hide-sm" data-i18n="nav_settings">Settings</a>
+      <a href="#install" data-i18n="nav_install">Install</a>
+      <a href="https://github.com/zlef-fr/zlefsdc" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap hero">
+    <span class="pill"><span class="dot"></span><span data-i18n="hero_pill">MPRIS · real-time · zero tokens</span></span>
+    <h1 data-i18n="hero_h1_html">Your current track, <span class="grad">in your panel</span></h1>
+    <p class="lede" data-i18n="hero_lede">ZlefSDC puts the album cover, title and artist of whatever you're playing right in your panel — with play/pause, previous and next a single click away. It reads the player live over MPRIS, so there are no logins, no API keys, and it works with Spotify or any compliant player.</p>
+    <div class="cta-row">
+      <a class="zl-btn zl-btn--primary zl-btn--lg" href="#install" data-i18n="hero_get">Install it</a>
+      <a class="zl-btn zl-btn--ghost zl-btn--lg" href="https://github.com/zlef-fr/zlefsdc" target="_blank" rel="noopener" data-i18n="hero_source">View source</a>
+    </div>
+    <figure class="shot">
+      <img src="/assets/screenshot.png" alt="ZlefSDC showing Midnight City by M83 with cover, controls and a progress bar" loading="lazy" width="880">
+    </figure>
+  </section>
+
+  <section class="wrap section" id="features">
+    <h2 data-i18n="feat_title">Built to disappear into your panel</h2>
+    <div class="grid">
+      <article class="card">
+        <div class="ic">◉</div>
+        <h3 data-i18n="f1_t">Live over MPRIS</h3>
+        <p data-i18n="f1_d">Reacts to D-Bus property changes the instant a track or play state changes — no polling, no tokens, no network round-trips.</p>
+      </article>
+      <article class="card">
+        <div class="ic">⇄</div>
+        <h3 data-i18n="f2_t">Any player</h3>
+        <p data-i18n="f2_d">Spotify by default, or set the target to “auto” and it grabs whatever is running — VLC, mpv, browsers, anything MPRIS.</p>
+      </article>
+      <article class="card">
+        <div class="ic">▦</div>
+        <h3 data-i18n="f3_t">Album art, done right</h3>
+        <p data-i18n="f3_d">Cover-fit, rounded corners, async fetch with caching — for both local and remote artwork. No layout jumps.</p>
+      </article>
+      <article class="card">
+        <div class="ic">⚙</div>
+        <h3 data-i18n="f4_t">Permissive by design</h3>
+        <p data-i18n="f4_d">Toggle every element, reorder them, size the cover, format the text, scroll long titles, theme the colours — live, no restart.</p>
+      </article>
+      <article class="card">
+        <div class="ic">⊙</div>
+        <h3 data-i18n="f5_t">Quick actions</h3>
+        <p data-i18n="f5_d">Bind clicks and scroll to play/pause, next, previous, raise the player, or run any command. Your panel, your shortcuts.</p>
+      </article>
+      <article class="card">
+        <div class="ic">◫</div>
+        <h3 data-i18n="f6_t">DE-agnostic core</h3>
+        <p data-i18n="f6_d">The whole UI is one reusable GTK widget. xfce4-panel ships first; a new host (GNOME, Waybar, Plasma) is a tiny adapter.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap section" id="settings">
+    <h2 data-i18n="set_title">Control the entire render</h2>
+    <p class="sub" data-i18n="set_sub">Everything below lives in a simple settings panel — and updates the widget instantly.</p>
+    <ul class="chips">
+      <li data-i18n="s_elements">Show/hide each element</li>
+      <li data-i18n="s_order">Free element order</li>
+      <li data-i18n="s_cover">Cover size &amp; radius</li>
+      <li data-i18n="s_format">%t / %a / %b text format</li>
+      <li data-i18n="s_marquee">Marquee / ellipsis</li>
+      <li data-i18n="s_font">Custom font &amp; colour</li>
+      <li data-i18n="s_buttons">Symbolic / flat buttons</li>
+      <li data-i18n="s_progress">Progress bar</li>
+      <li data-i18n="s_actions">Click &amp; scroll actions</li>
+      <li data-i18n="s_target">Player target</li>
+    </ul>
+  </section>
+
+  <section class="wrap section" id="install">
+    <h2 data-i18n="inst_title">Install</h2>
+    <p class="sub" data-i18n="inst_sub">Needs GTK 3, GLib/GIO, and for the panel plugin: libxfce4panel-2.0 + libxfce4ui-2.</p>
+
+    <h3 class="step" data-i18n="inst_build">1 · Build &amp; install</h3>
+    <pre class="code"><code>git clone https://github.com/zlef-fr/zlefsdc
+cd zlefsdc
+meson setup build
+ninja -C build
+sudo ninja -C build install</code></pre>
+
+    <h3 class="step" data-i18n="inst_add">2 · Add it to the panel</h3>
+    <p data-i18n="inst_add_d">In Xfce: <strong>Panel → Add New Items… → ZlefSDC</strong>. Right-click → Properties to open the settings.</p>
+
+    <h3 class="step" data-i18n="inst_alt">No supported panel?</h3>
+    <p data-i18n="inst_alt_d">Run the standalone window host — same widget, anywhere GTK runs:</p>
+    <pre class="code"><code>build/hosts/standalone/zlefsdc-standalone</code></pre>
+
+    <div class="cta-row">
+      <a class="zl-btn zl-btn--primary" href="https://github.com/zlef-fr/zlefsdc" target="_blank" rel="noopener" data-i18n="inst_gh">Full docs on GitHub</a>
+    </div>
+  </section>
+</main>
+
+<footer class="ft">
+  <div class="wrap">
+    <span>ZlefSDC · <a href="https://github.com/zlef-fr/zlefsdc" target="_blank" rel="noopener">GPL-2.0</a></span>
+    <span class="muted" data-i18n="ft_made">Part of zlef.fr</span>
+  </div>
+</footer>
+
+<script src="https://assets.zlef.fr/particles.js" defer></script>
+<script src="/js/i18n.js?v=1" defer></script>
+</body>
+</html>

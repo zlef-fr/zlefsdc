@@ -1,0 +1,7 @@
+services:
+  zlefsdc:
+    build: .
+    container_name: zlefsdc
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:10087:10087"
