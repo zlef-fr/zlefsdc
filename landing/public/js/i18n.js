@@ -4,7 +4,7 @@
 (function () {
   const DICT = {
     en: {
-      nav_features: 'Features', nav_settings: 'Settings', nav_install: 'Install',
+      nav_features: 'Features', nav_settings: 'Settings', nav_layouts: 'Layouts', nav_install: 'Install',
       hero_pill: 'MPRIS · real-time · zero tokens',
       hero_h1_html: 'Your current track, <span class="grad">in your panel</span>',
       hero_lede: "ZlefSDC puts the album cover, title and artist of whatever you're playing right in your panel — with play/pause, previous and next a single click away. It reads the player live over MPRIS, so there are no logins, no API keys, and it works with Spotify or any compliant player.",
@@ -23,6 +23,10 @@
       ex_compact_t: 'Minimal', ex_compact_d: 'A small round cover, the title, one button.',
       ex_textonly_t: 'No cover', ex_textonly_d: 'App icon, inline title · artist, full transport.',
       ex_tinted_t: 'Themed', ex_tinted_d: 'Custom text colour and layout, with progress.',
+      lay_title: 'Layout recipes',
+      lay_sub: 'Paste any of these into <strong>Properties → Layout → Order</strong> (or <code>[layout] order=</code> in the config file). “,” keeps elements on one line; “[ … ]” starts a new row or column.',
+      lay_inline: 'Single row (default)', lay_stacked: 'Cover + stacked column', lay_tworows: 'Two rows',
+      lay_controlsleft: 'Controls first', lay_coverless: 'No cover, stacked', lay_buttonscolumn: 'Buttons in a column',
       inst_title: 'Install',
       inst_sub: 'From the signed zlef package repositories — or build it from source.',
       inst_deb: 'Debian / Ubuntu — apt.zlef.fr', inst_arch: 'Arch — arch.zlef.fr',
@@ -34,7 +38,7 @@
       ft_made: 'Part of zlef.fr',
     },
     fr: {
-      nav_features: 'Fonctions', nav_settings: 'Réglages', nav_install: 'Installer',
+      nav_features: 'Fonctions', nav_settings: 'Réglages', nav_layouts: 'Dispositions', nav_install: 'Installer',
       hero_pill: 'MPRIS · temps réel · zéro jeton',
       hero_h1_html: 'Votre morceau en cours, <span class="grad">dans votre panneau</span>',
       hero_lede: "ZlefSDC affiche la pochette, le titre et l'artiste de ce que vous écoutez directement dans votre panneau — avec lecture/pause, précédent et suivant à un clic. Il lit le lecteur en direct via MPRIS : aucune connexion, aucune clé d'API, et ça marche avec Spotify ou n'importe quel lecteur compatible.",
@@ -53,6 +57,10 @@
       ex_compact_t: 'Minimal', ex_compact_d: 'Une petite pochette ronde, le titre, un bouton.',
       ex_textonly_t: 'Sans pochette', ex_textonly_d: 'Icône, titre · artiste en ligne, contrôles complets.',
       ex_tinted_t: 'Personnalisé', ex_tinted_d: 'Couleur de texte et disposition sur mesure, avec progression.',
+      lay_title: 'Recettes de disposition',
+      lay_sub: 'Collez l’une de ces valeurs dans <strong>Propriétés → Disposition → Ordre</strong> (ou <code>[layout] order=</code> dans le fichier de config). « , » garde les éléments sur une ligne ; « [ … ] » ouvre une nouvelle rangée ou colonne.',
+      lay_inline: 'Une seule ligne (défaut)', lay_stacked: 'Pochette + colonne empilée', lay_tworows: 'Deux rangées',
+      lay_controlsleft: 'Contrôles en premier', lay_coverless: 'Sans pochette, empilé', lay_buttonscolumn: 'Boutons en colonne',
       inst_title: 'Installation',
       inst_sub: 'Depuis les dépôts de paquets signés zlef — ou compilez depuis les sources.',
       inst_deb: 'Debian / Ubuntu — apt.zlef.fr', inst_arch: 'Arch — arch.zlef.fr',

@@ -410,12 +410,17 @@ static ZlExpand build_group (ZlefsdcWidget *self, GtkWidget *box,
       if (g_strcmp0 (tok, "info") == 0) {
         ce.h = TRUE;                        /* text wants horizontal room */
       } else if (g_strcmp0 (tok, "progress") == 0) {
-        /* the bar runs along the panel's main axis, wherever it's nested */
+        /* the bar runs along the panel's main axis, wherever it's nested, and
+         * stays centred (not stretched) on the cross axis so it lines up with
+         * the buttons / labels on the same line */
         gtk_orientable_set_orientation (GTK_ORIENTABLE (child), self->orientation);
         gtk_progress_bar_set_inverted (GTK_PROGRESS_BAR (child),
                                        self->orientation == GTK_ORIENTATION_VERTICAL);
-        ce.h = (self->orientation == GTK_ORIENTATION_HORIZONTAL);
-        ce.v = (self->orientation == GTK_ORIENTATION_VERTICAL);
+        if (self->orientation == GTK_ORIENTATION_HORIZONTAL) {
+          gtk_widget_set_valign (child, GTK_ALIGN_CENTER); ce.h = TRUE;
+        } else {
+          gtk_widget_set_halign (child, GTK_ALIGN_CENTER); ce.v = TRUE;
+        }
       }
     }
 

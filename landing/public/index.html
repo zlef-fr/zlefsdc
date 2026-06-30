@@ -26,7 +26,7 @@
 <!--/zlef-seo-->
 <meta name="theme-color" content="#06060a">
 <link rel="stylesheet" href="https://da.zlef.fr/tokens.css">
-<link rel="stylesheet" href="/css/landing.css?v=4">
+<link rel="stylesheet" href="/css/landing.css?v=5">
 </head>
 <body class="zl-body">
 <canvas class="bg" id="bg" aria-hidden="true"></canvas>
@@ -44,6 +44,7 @@
     <nav class="nav">
       <a href="#features" class="hide-sm" data-i18n="nav_features">Features</a>
       <a href="#settings" class="hide-sm" data-i18n="nav_settings">Settings</a>
+      <a href="#layouts" class="hide-sm" data-i18n="nav_layouts">Layouts</a>
       <a href="#install" data-i18n="nav_install">Install</a>
       <a href="https://github.com/zlef-fr/zlefsdc" target="_blank" rel="noopener">GitHub</a>
     </nav>
@@ -127,6 +128,37 @@
     </div>
   </section>
 
+  <section class="wrap section" id="layouts">
+    <h2 data-i18n="lay_title">Layout recipes</h2>
+    <p class="sub" data-i18n="lay_sub">Paste any of these into <strong>Properties → Layout → Order</strong> (or <code>[layout] order=</code> in the config file). “,” keeps elements on one line; “[ … ]” starts a new row or column.</p>
+    <div class="recipes">
+      <figure class="rec">
+        <div class="rec-shot"><img src="/assets/layouts/inline.png" alt="Single-row layout" loading="lazy"></div>
+        <figcaption><strong data-i18n="lay_inline">Single row (default)</strong><pre class="code"><code>cover, info, prev, playpause, next, progress</code></pre></figcaption>
+      </figure>
+      <figure class="rec">
+        <div class="rec-shot"><img src="/assets/layouts/stacked.png" alt="Cover beside a stacked column" loading="lazy"></div>
+        <figcaption><strong data-i18n="lay_stacked">Cover + stacked column</strong><pre class="code"><code>cover, [ info, [ prev, playpause, next ], progress ]</code></pre></figcaption>
+      </figure>
+      <figure class="rec">
+        <div class="rec-shot"><img src="/assets/layouts/tworows.png" alt="Two stacked rows" loading="lazy"></div>
+        <figcaption><strong data-i18n="lay_tworows">Two rows</strong><pre class="code"><code>[ [ cover, info ], [ prev, playpause, next, progress ] ]</code></pre></figcaption>
+      </figure>
+      <figure class="rec">
+        <div class="rec-shot"><img src="/assets/layouts/controlsleft.png" alt="Transport controls before the cover" loading="lazy"></div>
+        <figcaption><strong data-i18n="lay_controlsleft">Controls first</strong><pre class="code"><code>prev, playpause, next, cover, info</code></pre></figcaption>
+      </figure>
+      <figure class="rec">
+        <div class="rec-shot"><img src="/assets/layouts/coverless.png" alt="No cover, title over controls" loading="lazy"></div>
+        <figcaption><strong data-i18n="lay_coverless">No cover, stacked</strong><pre class="code"><code>[ info, [ prev, playpause, next ] ]</code></pre></figcaption>
+      </figure>
+      <figure class="rec">
+        <div class="rec-shot"><img src="/assets/layouts/buttonscolumn.png" alt="Transport buttons in a vertical column" loading="lazy"></div>
+        <figcaption><strong data-i18n="lay_buttonscolumn">Buttons in a column</strong><pre class="code"><code>cover, info, [ prev, playpause, next ]</code></pre></figcaption>
+      </figure>
+    </div>
+  </section>
+
   <section class="wrap section" id="install">
     <h2 data-i18n="inst_title">Install</h2>
     <p class="sub" data-i18n="inst_sub">From the signed zlef package repositories — or build it from source.</p>
@@ -173,6 +205,6 @@ sudo ninja -C build install</code></pre>
 </footer>
 
 <script src="https://assets.zlef.fr/particles.js" defer></script>
-<script src="/js/i18n.js?v=4" defer></script>
+<script src="/js/i18n.js?v=5" defer></script>
 </body>
 </html>

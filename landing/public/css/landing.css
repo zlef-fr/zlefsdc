@@ -72,6 +72,19 @@ h1 { font-size: clamp(2.2rem, 6vw, 3.7rem); line-height: 1.08; margin: 0 0 1.1re
   font-size: .76rem; color: var(--zl-olive-soft); background: var(--zl-surface-2);
   border: 1px solid var(--zl-line); border-radius: 7px; padding: .35rem .55rem; overflow-x: auto; white-space: nowrap; }
 
+/* ---- layout recipes ---- */
+.recipes { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 1.2rem; margin-top: 2.4rem; }
+.rec { margin: 0; background: var(--zl-surface-1); border: 1px solid var(--zl-line); border-radius: 14px;
+  overflow: hidden; display: flex; flex-direction: column; transition: transform .2s, border-color .2s; }
+.rec:hover { transform: translateY(-3px); border-color: var(--zl-line-strong); }
+.rec-shot { background: linear-gradient(180deg, #f4f4f2, #e7e7e3); padding: 14px;
+  display: flex; align-items: center; justify-content: center; min-height: 110px; }
+.rec-shot img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 8px 24px -12px rgba(0,0,0,.45); }
+.rec figcaption { padding: 1rem 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .55rem; flex: 1; }
+.rec figcaption strong { font-size: 1.02rem; }
+.rec figcaption .code { margin: 0; font-size: .8rem; padding: .6rem .7rem; white-space: pre-wrap; word-break: break-word; }
+.rec figcaption .code code { white-space: pre-wrap; color: var(--zl-olive-soft); }
+
 /* ---- install ---- */
 .step { margin: 2rem 0 .6rem; font-size: 1.1rem; color: var(--zl-olive-soft); }
 .code { background: var(--zl-surface-1); border: 1px solid var(--zl-line); border-radius: 12px;
