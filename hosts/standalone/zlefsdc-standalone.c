@@ -64,14 +64,23 @@ int main (int argc, char **argv) {
     gtk_window_set_resizable (GTK_WINDOW (win), FALSE);
   }
 
+  /* ZLEFSDC_PANEL=<px> simulates a panel of that thickness (bare mode also
+   * constrains the window to it, so any overflow is visible in a screenshot). */
+  const char *panel_env = g_getenv ("ZLEFSDC_PANEL");
+  int panel = panel_env ? atoi (panel_env) : 56;
+
   ZlefsdcWidget *w = zlefsdc_widget_new (settings);
   zlefsdc_widget_set_orientation (w, GTK_ORIENTATION_HORIZONTAL);
-  zlefsdc_widget_set_panel_size (w, 56);
+  zlefsdc_widget_set_panel_size (w, panel);
 
   GtkWidget *frame = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-  g_object_set (frame, "margin", bare ? 8 : 10, NULL);
+  g_object_set (frame, "margin", bare ? 4 : 10, NULL);
   gtk_box_pack_start (GTK_BOX (frame), GTK_WIDGET (w), TRUE, TRUE, 0);
   gtk_container_add (GTK_CONTAINER (win), frame);
+  if (bare) {                       /* pin the widget to the panel height */
+    gtk_widget_set_valign (GTK_WIDGET (w), GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request (GTK_WIDGET (w), -1, panel);
+  }
 
   gtk_widget_show_all (win);
   gtk_main ();

@@ -26,6 +26,13 @@ struct _ZlefsdcWidget {
   guint          marquee_id, progress_id;
   int            marquee_off;
 
+  /* fit-to-panel: derived each rebuild so a multi-row layout never overflows
+   * the panel thickness */
+  int            rows;           /* stacked strips along the panel cross axis */
+  int            fit_icon;       /* button icon px after fitting             */
+  int            fit_font;       /* label font px cap (0 = no cap)           */
+  int            eff_spacing;    /* spacing actually used                    */
+
   GtkCssProvider *css;
 };
 
@@ -266,16 +273,20 @@ static const char *btn_icon (gboolean symbolic, const char *base) {
 
 static GtkWidget *make_button (ZlefsdcWidget *self, const char *icon_base, GCallback cb) {
   gboolean symbolic = zlefsdc_settings_get_bool (self->settings, "buttons.symbolic");
-  int sz = zlefsdc_settings_get_int (self->settings, "buttons.icon_size");
+  int sz = self->fit_icon;   /* already fitted to the panel in rebuild */
   GtkWidget *img = gtk_image_new_from_icon_name (btn_icon (symbolic, icon_base), GTK_ICON_SIZE_BUTTON);
   gtk_image_set_pixel_size (GTK_IMAGE (img), sz);
   GtkWidget *btn = gtk_button_new ();
   gtk_button_set_image (GTK_BUTTON (btn), img);
+  /* zl-fitbtn drops the theme's min-size/padding so the button can shrink to
+   * the icon and several rows fit inside the panel (see apply_style). */
+  gtk_style_context_add_class (gtk_widget_get_style_context (btn), "zl-fitbtn");
   if (zlefsdc_settings_get_bool (self->settings, "buttons.flat")) {
     gtk_button_set_relief (GTK_BUTTON (btn), GTK_RELIEF_NONE);
     gtk_style_context_add_class (gtk_widget_get_style_context (btn), "flat");
   }
   gtk_widget_set_focus_on_click (btn, FALSE);
+  gtk_widget_set_halign (btn, GTK_ALIGN_CENTER);
   gtk_widget_set_valign (btn, GTK_ALIGN_CENTER);
   g_signal_connect (btn, "clicked", cb, self);
   return btn;
@@ -348,7 +359,7 @@ static GtkWidget *make_cover (ZlefsdcWidget *self) {
 
 static GtkWidget *make_icon (ZlefsdcWidget *self) {
   self->icon = gtk_image_new ();
-  int sz = zlefsdc_settings_get_int (self->settings, "buttons.icon_size") + 4;
+  int sz = self->fit_icon + 4;
   gtk_image_set_pixel_size (GTK_IMAGE (self->icon), CLAMP (sz, 12, 64));
   gtk_widget_set_valign (self->icon, GTK_ALIGN_CENTER);
   return self->icon;
@@ -369,6 +380,61 @@ static void clear_refs (ZlefsdcWidget *self) {
   self->title_lbl = self->artist_lbl = self->album_lbl = NULL;
   self->btn_prev = self->btn_pp = self->btn_next = self->pp_img = NULL;
   self->progress = NULL;
+}
+
+/* Is this element enabled (used by the fit pre-pass, which must not build it). */
+static gboolean element_shown (ZlefsdcWidget *self, const char *tok) {
+  ZlefsdcSettings *s = self->settings;
+  if (g_strcmp0 (tok, "cover") == 0)     return zlefsdc_settings_get_bool (s, "show.cover");
+  if (g_strcmp0 (tok, "icon") == 0)      return zlefsdc_settings_get_bool (s, "show.icon");
+  if (g_strcmp0 (tok, "info") == 0)      return zlefsdc_settings_get_bool (s, "show.title") ||
+                                                zlefsdc_settings_get_bool (s, "show.artist") ||
+                                                zlefsdc_settings_get_bool (s, "show.album");
+  if (g_strcmp0 (tok, "prev") == 0)      return zlefsdc_settings_get_bool (s, "show.prev");
+  if (g_strcmp0 (tok, "playpause") == 0) return zlefsdc_settings_get_bool (s, "show.playpause");
+  if (g_strcmp0 (tok, "next") == 0)      return zlefsdc_settings_get_bool (s, "show.next");
+  if (g_strcmp0 (tok, "progress") == 0)  return zlefsdc_settings_get_bool (s, "show.progress");
+  return FALSE;
+}
+
+/* Pre-pass over the order string: how many strips stack along the panel's cross
+ * axis (the axis limited by panel thickness). Groups along the panel main axis
+ * take the max of their children; perpendicular groups sum them. Leaves are 1.
+ * This is what a multi-row layout must fit into the panel height. */
+static int count_cross (ZlefsdcWidget *self, GtkOrientation orient, const char **pp) {
+  gboolean stack = (orient != self->orientation);   /* stacks along cross axis */
+  int acc = stack ? 0 : 1;
+  const char *p = *pp;
+  char tok[32];
+  while (*p) {
+    while (*p == ' ' || *p == '\t' || *p == ',') p++;
+    if (*p == '\0' || *p == ']') { if (*p == ']') p++; break; }
+    int child;
+    if (*p == '[') {
+      p++;
+      GtkOrientation co = (orient == GTK_ORIENTATION_HORIZONTAL)
+                        ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+      child = count_cross (self, co, &p);
+    } else {
+      int n = 0;
+      while (g_ascii_isalpha (*p) && n < (int) sizeof tok - 1) tok[n++] = *p++;
+      tok[n] = '\0';
+      if (n == 0) { p++; continue; }
+      child = element_shown (self, tok) ? 1 : 0;
+      /* info stacks title/artist/album vertically (unless inline), so it is
+       * that many text lines tall and must be counted for the fit. */
+      if (child && g_strcmp0 (tok, "info") == 0 &&
+          !zlefsdc_settings_get_bool (self->settings, "layout.info_inline")) {
+        int lines = zlefsdc_settings_get_bool (self->settings, "show.title")
+                  + zlefsdc_settings_get_bool (self->settings, "show.artist")
+                  + zlefsdc_settings_get_bool (self->settings, "show.album");
+        child = MAX (lines, 1);
+      }
+    }
+    if (stack) acc += child; else acc = MAX (acc, child);
+  }
+  *pp = p;
+  return MAX (acc, 1);
 }
 
 /* Instantiate one element by token, honouring its show.* toggle. NULL = hidden
@@ -411,7 +477,7 @@ typedef struct { gboolean h, v; } ZlExpand;
 static ZlExpand build_group (ZlefsdcWidget *self, GtkWidget *box,
                              GtkOrientation orient, const char **pp) {
   ZlExpand acc = { FALSE, FALSE };
-  int spacing = zlefsdc_settings_get_int (self->settings, "layout.spacing");
+  int spacing = self->eff_spacing;
   const char *p = *pp;
   char tok[32];
 
@@ -472,12 +538,28 @@ static void rebuild (ZlefsdcWidget *self) {
   if (self->box) gtk_widget_destroy (self->box);
   clear_refs (self);
 
-  int spacing = zlefsdc_settings_get_int (self->settings, "layout.spacing");
-  self->box = gtk_box_new (self->orientation, spacing);
-  gtk_container_add (GTK_CONTAINER (self), self->box);
-
   const char *order = zlefsdc_settings_get_string (self->settings, "layout.order");
   if (!order || !*order) order = "cover,icon,info,prev,playpause,next,progress";
+
+  /* --- fit to panel: shrink icons / font / spacing so the stacked rows fit
+   * the panel thickness instead of overflowing off-screen. --- */
+  const char *cp = order;
+  self->rows = count_cross (self, self->orientation, &cp);
+  int cfg_icon = zlefsdc_settings_get_int (self->settings, "buttons.icon_size");
+  int cfg_spacing = zlefsdc_settings_get_int (self->settings, "layout.spacing");
+  self->fit_icon = cfg_icon;
+  self->fit_font = 0;
+  self->eff_spacing = cfg_spacing;
+  if (self->panel_size > 0 && self->rows > 1) {
+    self->eff_spacing = MIN (cfg_spacing, 3);
+    int budget = (self->panel_size - (self->rows - 1) * self->eff_spacing) / self->rows;
+    self->fit_icon = CLAMP (MIN (cfg_icon, budget - 4), 8, cfg_icon);
+    self->fit_font = CLAMP (budget - 5, 7, 15);          /* cap label font     */
+  }
+
+  self->box = gtk_box_new (self->orientation, self->eff_spacing);
+  gtk_container_add (GTK_CONTAINER (self), self->box);
+
   const char *p = order;
   build_group (self, self->box, self->orientation, &p);
 
@@ -494,6 +576,8 @@ static void apply_style (ZlefsdcWidget *self) {
   GString *css = g_string_new (NULL);
   g_string_append (css, ".zl-progress { min-height: 3px; min-width: 3px; }\n");
   g_string_append (css, ".zl-artist, .zl-album { opacity: 0.75; font-size: smaller; }\n");
+  /* let transport buttons shrink to their icon so multiple rows fit the panel */
+  g_string_append (css, ".zl-fitbtn { min-width: 0; min-height: 0; padding: 0 1px; margin: 0; }\n");
   if (font && *font) {
     PangoFontDescription *d = pango_font_description_from_string (font);
     const char *fam = pango_font_description_get_family (d);
@@ -506,6 +590,9 @@ static void apply_style (ZlefsdcWidget *self) {
   }
   if (color && *color)
     g_string_append_printf (css, ".zl-title, .zl-artist, .zl-album { color: %s; }\n", color);
+  /* font cap to fit a multi-row layout into the panel (applied last so it wins) */
+  if (self->fit_font > 0)
+    g_string_append_printf (css, ".zl-title, .zl-artist, .zl-album { font-size: %dpx; }\n", self->fit_font);
 
   gtk_css_provider_load_from_data (self->css, css->str, -1, NULL);
   g_string_free (css, TRUE);
@@ -545,7 +632,7 @@ static void update_state (ZlefsdcWidget *self) {
     gboolean symbolic = zlefsdc_settings_get_bool (self->settings, "buttons.symbolic");
     const char *base = (pb == ZLEFSDC_PLAYBACK_PLAYING) ? "media-playback-pause" : "media-playback-start";
     gtk_image_set_from_icon_name (GTK_IMAGE (self->pp_img), btn_icon (symbolic, base), GTK_ICON_SIZE_BUTTON);
-    gtk_image_set_pixel_size (GTK_IMAGE (self->pp_img), zlefsdc_settings_get_int (self->settings, "buttons.icon_size"));
+    gtk_image_set_pixel_size (GTK_IMAGE (self->pp_img), self->fit_icon);
   }
   if (self->btn_next) gtk_widget_set_sensitive (self->btn_next, zlefsdc_player_can_next (self->player));
   if (self->btn_prev) gtk_widget_set_sensitive (self->btn_prev, zlefsdc_player_can_prev (self->player));
@@ -555,8 +642,7 @@ static void update_state (ZlefsdcWidget *self) {
     const char *ic = zlefsdc_player_get_icon_name (self->player);
     if (!ic || !*ic) ic = "multimedia-player";
     gtk_image_set_from_icon_name (GTK_IMAGE (self->icon), ic, GTK_ICON_SIZE_LARGE_TOOLBAR);
-    gtk_image_set_pixel_size (GTK_IMAGE (self->icon),
-        CLAMP (zlefsdc_settings_get_int (self->settings, "buttons.icon_size") + 4, 12, 64));
+    gtk_image_set_pixel_size (GTK_IMAGE (self->icon), CLAMP (self->fit_icon + 4, 12, 64));
   }
 
   /* tooltip */
@@ -598,11 +684,9 @@ void zlefsdc_widget_set_orientation (ZlefsdcWidget *self, GtkOrientation o) {
 void zlefsdc_widget_set_panel_size (ZlefsdcWidget *self, int thickness_px) {
   if (self->panel_size == thickness_px) return;
   self->panel_size = thickness_px;
-  if (self->cover) {
-    self->cover_px = compute_cover_px (self);
-    gtk_widget_set_size_request (self->cover, self->cover_px, self->cover_px);
-    request_cover (self);
-  }
+  /* the fit (icon/font/spacing) depends on the panel thickness, so re-run the
+   * whole layout rather than just resizing the cover. */
+  rebuild (self);
 }
 
 ZlefsdcSettings *zlefsdc_widget_get_settings (ZlefsdcWidget *self) { return self->settings; }
