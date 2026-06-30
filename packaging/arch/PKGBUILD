@@ -1,6 +1,6 @@
 # Maintainer: zlef.fr <arch@zlef.fr>
 pkgname=zlefsdc
-pkgver=0.1.5
+pkgver=0.1.6
 pkgrel=1
 pkgdesc="Spotify Display Controls — now-playing panel widget (xfce4-panel) over MPRIS, with a DE-agnostic core"
 arch=('x86_64')

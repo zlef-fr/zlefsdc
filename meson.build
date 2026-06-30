@@ -1,5 +1,5 @@
 project('zlefsdc', 'c',
-  version: '0.1.5',
+  version: '0.1.6',
   license: 'GPL-2.0-or-later',
   default_options: ['c_std=gnu11', 'warning_level=2'],
 )

@@ -553,8 +553,10 @@ static void rebuild (ZlefsdcWidget *self) {
   if (self->panel_size > 0 && self->rows > 1) {
     self->eff_spacing = MIN (cfg_spacing, 3);
     int budget = (self->panel_size - (self->rows - 1) * self->eff_spacing) / self->rows;
-    self->fit_icon = CLAMP (MIN (cfg_icon, budget - 4), 8, cfg_icon);
-    self->fit_font = CLAMP (budget - 5, 7, 15);          /* cap label font     */
+    /* only shrink when a strip is genuinely too short for the configured icon;
+     * keep the full size otherwise (so buttons stay normal on a ≥40px panel). */
+    self->fit_icon = CLAMP (MIN (cfg_icon, budget - 2), 8, cfg_icon);
+    self->fit_font = CLAMP (budget - 3, 8, 16);          /* cap label font     */
   }
 
   self->box = gtk_box_new (self->orientation, self->eff_spacing);
@@ -576,8 +578,9 @@ static void apply_style (ZlefsdcWidget *self) {
   GString *css = g_string_new (NULL);
   g_string_append (css, ".zl-progress { min-height: 3px; min-width: 3px; }\n");
   g_string_append (css, ".zl-artist, .zl-album { opacity: 0.75; font-size: smaller; }\n");
-  /* let transport buttons shrink to their icon so multiple rows fit the panel */
-  g_string_append (css, ".zl-fitbtn { min-width: 0; min-height: 0; padding: 0 1px; margin: 0; }\n");
+  /* let transport buttons shrink to their icon so multiple rows fit the panel,
+   * but keep a little horizontal padding so they don't look cramped */
+  g_string_append (css, ".zl-fitbtn { min-width: 0; min-height: 0; padding: 1px 4px; margin: 0; }\n");
   if (font && *font) {
     PangoFontDescription *d = pango_font_description_from_string (font);
     const char *fam = pango_font_description_get_family (d);

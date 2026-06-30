@@ -6,6 +6,7 @@ MediaPlayer2 + MediaPlayer2.Player interfaces (Metadata, PlaybackStatus,
 PlayPause/Next/Previous, CanGoNext/Prev) for the widget to render and drive.
 """
 import sys
+import time
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
@@ -30,6 +31,14 @@ class Player(dbus.service.Object):
         super().__init__(bus, PATH)
         self.i = 0
         self.status = "Playing"
+        self.base = 0                 # microseconds at last state change
+        self.t0 = time.monotonic()
+
+    def position(self):
+        pos = self.base
+        if self.status == "Playing":
+            pos += int((time.monotonic() - self.t0) * 1_000_000)
+        return dbus.Int64(max(0, pos))
 
     # --- Properties -------------------------------------------------------
     def metadata(self):
@@ -67,7 +76,7 @@ class Player(dbus.service.Object):
                 "CanGoPrevious": True,
                 "CanPlay": True,
                 "CanPause": True,
-                "Position": dbus.Int64(42_000_000),
+                "Position": self.position(),
             }, signature="sv")
         return dbus.Dictionary({}, signature="sv")
 
@@ -90,19 +99,26 @@ class Player(dbus.service.Object):
     # --- Player methods ---------------------------------------------------
     @dbus.service.method(PLAYER)
     def PlayPause(self):
-        self.status = "Paused" if self.status == "Playing" else "Playing"
+        if self.status == "Playing":
+            self.base += int((time.monotonic() - self.t0) * 1_000_000)
+            self.status = "Paused"
+        else:
+            self.t0 = time.monotonic()
+            self.status = "Playing"
         print("PlayPause ->", self.status, flush=True)
         self._emit()
 
     @dbus.service.method(PLAYER)
     def Next(self):
         self.i = (self.i + 1) % len(TRACKS)
+        self.base = 0; self.t0 = time.monotonic()
         print("Next ->", TRACKS[self.i][0], flush=True)
         self._emit()
 
     @dbus.service.method(PLAYER)
     def Previous(self):
         self.i = (self.i - 1) % len(TRACKS)
+        self.base = 0; self.t0 = time.monotonic()
         print("Previous ->", TRACKS[self.i][0], flush=True)
         self._emit()
 

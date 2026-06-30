@@ -227,17 +227,15 @@ gboolean         zlefsdc_player_can_prev     (ZlefsdcPlayer *s) { return s->can_
 gint64           zlefsdc_player_get_length_us(ZlefsdcPlayer *s) { return s->length_us; }
 
 gint64 zlefsdc_player_get_position_us (ZlefsdcPlayer *self) {
-  if (!self->player) return 0;
-  GVariant *v = g_dbus_proxy_get_cached_property (self->player, "Position");
-  /* Position is intentionally not in PropertiesChanged; some players still
-   * cache it, otherwise fall back to a direct Get. */
-  if (!v) {
-    GVariant *r = g_dbus_connection_call_sync (
-        self->bus, self->bus_name, MPRIS_PATH, "org.freedesktop.DBus.Properties",
-        "Get", g_variant_new ("(ss)", IFACE_PLAYER, "Position"),
-        G_VARIANT_TYPE ("(v)"), G_DBUS_CALL_FLAGS_NONE, 200, NULL, NULL);
-    if (r) { g_variant_get (r, "(v)", &v); g_variant_unref (r); }
-  }
+  if (!self->player || !self->bus_name) return 0;
+  /* Position is NOT in PropertiesChanged, so the proxy's cached copy is frozen
+   * at creation time — always fetch a fresh value or the progress bar sticks. */
+  GVariant *v = NULL;
+  GVariant *r = g_dbus_connection_call_sync (
+      self->bus, self->bus_name, MPRIS_PATH, "org.freedesktop.DBus.Properties",
+      "Get", g_variant_new ("(ss)", IFACE_PLAYER, "Position"),
+      G_VARIANT_TYPE ("(v)"), G_DBUS_CALL_FLAGS_NONE, 300, NULL, NULL);
+  if (r) { g_variant_get (r, "(v)", &v); g_variant_unref (r); }
   gint64 pos = v ? g_variant_get_int64 (v) : 0;
   if (v) g_variant_unref (v);
   return pos;
