@@ -7,3 +7,4 @@ Comment[fr]=Afficher et contrôler la piste Spotify (ou MPRIS) en cours depuis l
 Icon=multimedia-player
 X-XFCE-Module=zlefsdc
 X-XFCE-Internal=FALSE
+X-XFCE-API=2.0
