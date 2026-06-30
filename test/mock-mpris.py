@@ -49,7 +49,8 @@ class Player(dbus.service.Object):
         t, artists, album = TRACKS[self.i]
         m = {
             "mpris:trackid": dbus.ObjectPath("/track/%d" % self.i),
-            "mpris:length": dbus.Int64(231_000_000),
+            # Spotify sends length as uint64 (t), not int64 (x) — mirror that
+            "mpris:length": dbus.UInt64(231_000_000),
             "xesam:title": t,
             "xesam:artist": dbus.Array(artists, signature="s"),
             "xesam:album": album,
