@@ -77,6 +77,58 @@ static GtkWidget *action_row (ZlefsdcSettings *s, const char *key) {
   return c;
 }
 
+/* ---- layout presets ---------------------------------------------------- */
+/* One-click arrangements so users don't have to hand-write the order grammar.
+ * cover_size/inline = -1 means "leave as-is". */
+typedef struct { const char *id, *label, *order; int inlin; int cover_size; } LayoutPreset;
+static const LayoutPreset PRESETS[] = {
+  { "custom",   N_("Choose a preset…"),                NULL, -1, -1 },
+  { "row",      N_("Single row"),
+    "cover, info, prev, playpause, next, progress",                 0, -1 },
+  { "mediabar", N_("Full-height cover · media bar"),
+    "cover, [ info, [ progress, prev, playpause, next ] ]",         1,  0 },
+  { "stacked",  N_("Cover + stacked column"),
+    "cover, [ info, [ prev, playpause, next ], progress ]",         0, -1 },
+  { "tworows",  N_("Two rows"),
+    "[ [ cover, info ], [ prev, playpause, next, progress ] ]",     0, -1 },
+  { "compact",  N_("Compact, no cover"),
+    "[ info, [ prev, playpause, next ] ]",                          1, -1 },
+};
+
+typedef struct { ZlefsdcSettings *s; GtkWidget *order_entry, *inline_sw, *cover_spin; } LayoutCtx;
+
+static void on_preset (GtkComboBox *c, gpointer data) {
+  LayoutCtx *x = data;
+  const char *id = gtk_combo_box_get_active_id (c);
+  if (!id || g_strcmp0 (id, "custom") == 0) return;
+  const LayoutPreset *pr = NULL;
+  for (guint i = 0; i < G_N_ELEMENTS (PRESETS); i++)
+    if (g_strcmp0 (PRESETS[i].id, id) == 0) { pr = &PRESETS[i]; break; }
+  if (!pr) return;
+
+  zlefsdc_settings_freeze (x->s);
+  if (pr->order)        zlefsdc_settings_set_string (x->s, "layout.order", pr->order);
+  if (pr->inlin >= 0)   zlefsdc_settings_set_bool   (x->s, "layout.info_inline", pr->inlin);
+  if (pr->cover_size >= 0) zlefsdc_settings_set_int  (x->s, "cover.size", pr->cover_size);
+  zlefsdc_settings_thaw (x->s);                 /* single live re-render */
+
+  /* reflect into the manual controls */
+  if (pr->order)      gtk_entry_set_text (GTK_ENTRY (x->order_entry), pr->order);
+  if (pr->inlin >= 0) gtk_switch_set_active (GTK_SWITCH (x->inline_sw), pr->inlin);
+  if (pr->cover_size >= 0 && x->cover_spin)
+    gtk_spin_button_set_value (GTK_SPIN_BUTTON (x->cover_spin), pr->cover_size);
+  persist (x->s);
+}
+
+static GtkWidget *preset_combo (LayoutCtx *ctx) {
+  GtkWidget *c = gtk_combo_box_text_new ();
+  for (guint i = 0; i < G_N_ELEMENTS (PRESETS); i++)
+    gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (c), PRESETS[i].id, _(PRESETS[i].label));
+  gtk_combo_box_set_active (GTK_COMBO_BOX (c), 0);
+  g_signal_connect (c, "changed", G_CALLBACK (on_preset), ctx);
+  return c;
+}
+
 /* ---- grid plumbing ----------------------------------------------------- */
 
 static GtkWidget *new_page (GtkWidget *notebook, const char *title) {
@@ -135,13 +187,23 @@ GtkWidget *zlefsdc_prefs_new (ZlefsdcSettings *settings) {
 
   /* Layout */
   p = new_page (nb, _("Layout"));
+  LayoutCtx *lc = g_new0 (LayoutCtx, 1);
+  lc->s = settings;
+  GtkWidget *order_e = str_row (settings, "layout.order");
+  GtkWidget *inline_s = bool_row (settings, "layout.info_inline");
+  GtkWidget *cover_sp = int_row (settings, "cover.size", 0, 512);
+  lc->order_entry = order_e; lc->inline_sw = inline_s; lc->cover_spin = cover_sp;
+  g_object_set_data_full (G_OBJECT (nb), "zl-layoutctx", lc, g_free);
+
+  add_section (p, _("Preset"));
+  add_row (p, _("Start from a preset"), preset_combo (lc));
   add_section (p, _("Arrangement"));
   add_row (p, _("Order — “,” = same line, “[ ]” = new row/column:\ne.g. cover, [ info, [ prev, playpause, next ], progress ]"),
-           str_row (settings, "layout.order"));
+           order_e);
   add_row (p, _("Spacing (px)"),     int_row (settings, "layout.spacing", 0, 40));
-  add_row (p, _("Title & artist inline"), bool_row (settings, "layout.info_inline"));
+  add_row (p, _("Title & artist inline"), inline_s);
   add_section (p, _("Cover"));
-  add_row (p, _("Size (px, 0 = fit panel)"), int_row (settings, "cover.size", 0, 512));
+  add_row (p, _("Size (px, 0 = fit height)"), cover_sp);
   add_row (p, _("Corner radius (px)"), int_row (settings, "cover.radius", 0, 64));
 
   /* Text */

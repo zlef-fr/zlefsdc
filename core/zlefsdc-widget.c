@@ -77,8 +77,8 @@ static void set_label (ZlefsdcWidget *self, GtkWidget *lbl, const char *text) {
     /* leave actual text to the marquee tick */
   } else {
     gtk_label_set_ellipsize (GTK_LABEL (lbl), maxc > 0 ? PANGO_ELLIPSIZE_END : PANGO_ELLIPSIZE_NONE);
-    gtk_label_set_width_chars (GTK_LABEL (lbl), maxc > 0 ? maxc : -1);
-    gtk_label_set_max_width_chars (GTK_LABEL (lbl), maxc > 0 ? maxc : -1);
+    gtk_label_set_width_chars (GTK_LABEL (lbl), -1);                 /* natural width… */
+    gtk_label_set_max_width_chars (GTK_LABEL (lbl), maxc > 0 ? maxc : -1);  /* …capped */
     gtk_label_set_text (GTK_LABEL (lbl), text ?: "");
   }
 }
@@ -147,7 +147,14 @@ static void ensure_progress_timer (ZlefsdcWidget *self) {
 
 static gboolean cover_draw (GtkWidget *w, cairo_t *cr, gpointer data) {
   ZlefsdcWidget *self = data;
-  int side = self->cover_px;
+  /* the drawing area may be taller/wider than the requested square (when it is
+   * set to fill a multi-row column), so draw a centred square of the actual
+   * short side and scale the art to it. */
+  int aw = gtk_widget_get_allocated_width (w);
+  int ah = gtk_widget_get_allocated_height (w);
+  int side = MIN (aw, ah);
+  if (side <= 0) return TRUE;
+  cairo_translate (cr, (aw - side) / 2.0, (ah - side) / 2.0);
   int r = CLAMP (zlefsdc_settings_get_int (self->settings, "cover.radius"), 0, side / 2);
 
   /* rounded rect clip */
@@ -161,6 +168,8 @@ static gboolean cover_draw (GtkWidget *w, cairo_t *cr, gpointer data) {
   cairo_clip (cr);
 
   if (self->cover_pix) {
+    int pw = gdk_pixbuf_get_width (self->cover_pix);
+    if (pw > 0) { double s = (double) side / pw; cairo_scale (cr, s, s); }
     gdk_cairo_set_source_pixbuf (cr, self->cover_pix, 0, 0);
     cairo_paint (cr);
   } else {
@@ -305,15 +314,36 @@ static GtkWidget *make_info (ZlefsdcWidget *self) {
   return self->info_evt;
 }
 
+static void on_cover_alloc (GtkWidget *w, GdkRectangle *a, gpointer data) {
+  ZlefsdcWidget *self = data;
+  int side = MIN (a->width, a->height);
+  /* keep the fetched art roughly matched to the on-screen square for crispness
+   * (e.g. when the cover grows to fill a tall multi-row column) */
+  if (side > 4 && ABS (side - self->cover_px) > 2) {
+    self->cover_px = side;
+    request_cover (self);
+  }
+}
+
 static GtkWidget *make_cover (ZlefsdcWidget *self) {
   self->cover_px = compute_cover_px (self);
   self->cover = gtk_drawing_area_new ();
   gtk_widget_set_size_request (self->cover, self->cover_px, self->cover_px);
-  gtk_widget_set_valign (self->cover, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign (self->cover, GTK_ALIGN_FILL);
+  gtk_widget_set_valign (self->cover, GTK_ALIGN_FILL);
   gtk_widget_add_events (self->cover, GDK_BUTTON_PRESS_MASK);
   g_signal_connect (self->cover, "draw", G_CALLBACK (cover_draw), self);
   g_signal_connect (self->cover, "button-press-event", G_CALLBACK (on_cover_press), self);
-  return self->cover;
+  g_signal_connect (self->cover, "size-allocate", G_CALLBACK (on_cover_alloc), self);
+
+  /* an aspect frame keeps the cover a perfect square while letting it fill the
+   * available height — so it can span a tall column ("cover full height"). */
+  GtkWidget *frame = gtk_aspect_frame_new (NULL, 0.5, 0.5, 1.0, FALSE);
+  gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_NONE);
+  gtk_widget_set_valign (frame, GTK_ALIGN_FILL);
+  gtk_widget_set_halign (frame, GTK_ALIGN_CENTER);
+  gtk_container_add (GTK_CONTAINER (frame), self->cover);
+  return frame;
 }
 
 static GtkWidget *make_icon (ZlefsdcWidget *self) {

@@ -85,8 +85,32 @@ msgstr "Titre et artiste sur une ligne"
 msgid "Cover"
 msgstr "Pochette"
 
-msgid "Size (px, 0 = fit panel)"
-msgstr "Taille (px, 0 = ajuster au panneau)"
+msgid "Size (px, 0 = fit height)"
+msgstr "Taille (px, 0 = ajuster à la hauteur)"
+
+msgid "Preset"
+msgstr "Préréglage"
+
+msgid "Start from a preset"
+msgstr "Partir d’un préréglage"
+
+msgid "Choose a preset…"
+msgstr "Choisir un préréglage…"
+
+msgid "Single row"
+msgstr "Une seule ligne"
+
+msgid "Full-height cover · media bar"
+msgstr "Pochette pleine hauteur · barre média"
+
+msgid "Cover + stacked column"
+msgstr "Pochette + colonne empilée"
+
+msgid "Two rows"
+msgstr "Deux rangées"
+
+msgid "Compact, no cover"
+msgstr "Compact, sans pochette"
 
 msgid "Corner radius (px)"
 msgstr "Rayon des coins (px)"

@@ -9,18 +9,19 @@ APP="$HERE/build/hosts/standalone/zlefsdc-standalone"
 CFGDIR=/tmp/zl-lay
 mkdir -p "$OUTDIR" "$CFGDIR"
 
-# name|order  — one recipe per line (order may contain brackets/commas)
+# name|inline|coversize|order  — one recipe per line
 recipes=(
-  "inline|cover, info, prev, playpause, next, progress"
-  "stacked|cover, [ info, [ prev, playpause, next ], progress ]"
-  "tworows|[ [ cover, info ], [ prev, playpause, next, progress ] ]"
-  "controlsleft|prev, playpause, next, cover, info"
-  "coverless|[ info, [ prev, playpause, next ] ]"
-  "buttonscolumn|cover, info, [ prev, playpause, next ]"
+  "mediabar|1|0|cover, [ info, [ progress, prev, playpause, next ] ]"
+  "inline|0|50|cover, info, prev, playpause, next, progress"
+  "stacked|0|50|cover, [ info, [ prev, playpause, next ], progress ]"
+  "tworows|0|50|[ [ cover, info ], [ prev, playpause, next, progress ] ]"
+  "controlsleft|0|50|prev, playpause, next, cover, info"
+  "coverless|1|0|[ info, [ prev, playpause, next ] ]"
+  "buttonscolumn|0|50|cover, info, [ prev, playpause, next ]"
 )
 
 for r in "${recipes[@]}"; do
-  name="${r%%|*}"; order="${r#*|}"
+  IFS='|' read -r name inlin csize order <<< "$r"
   cover_line="cover=true"; icon_line="icon=false"
   [ "$name" = "coverless" ] && { cover_line="cover=false"; icon_line="icon=true"; }
   cat > "$CFGDIR/$name.ini" <<EOF
@@ -31,13 +32,14 @@ title=true
 artist=true
 progress=true
 [cover]
-size=50
+size=$csize
 radius=8
 [text]
 max_chars=26
 [layout]
 order=$order
 spacing=8
+info_inline=$([ "$inlin" = "1" ] && echo true || echo false)
 EOF
 done
 

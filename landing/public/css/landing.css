@@ -82,6 +82,7 @@ h1 { font-size: clamp(2.2rem, 6vw, 3.7rem); line-height: 1.08; margin: 0 0 1.1re
 .rec-shot img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 8px 24px -12px rgba(0,0,0,.45); }
 .rec figcaption { padding: 1rem 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .55rem; flex: 1; }
 .rec figcaption strong { font-size: 1.02rem; }
+.rec figcaption .rec-note { color: var(--zl-text-soft); font-size: .9rem; }
 .rec figcaption .code { margin: 0; font-size: .8rem; padding: .6rem .7rem; white-space: pre-wrap; word-break: break-word; }
 .rec figcaption .code code { white-space: pre-wrap; color: var(--zl-olive-soft); }
 
