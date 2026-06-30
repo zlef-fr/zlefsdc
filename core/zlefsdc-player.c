@@ -26,6 +26,11 @@ struct _ZlefsdcPlayer {
   char           *title, *artist, *album, *art_url, *app_name, *icon_name;
   gboolean        can_next, can_prev;
   gint64          length_us;
+
+  /* client-side position estimate (Spotify's MPRIS Position is unreliable, so
+   * we sample on track/state changes and extrapolate with a monotonic clock) */
+  gint64          pos_base_us;   /* sampled position */
+  gint64          pos_mono0_us;  /* monotonic time at the sample */
 };
 
 G_DEFINE_FINAL_TYPE (ZlefsdcPlayer, zlefsdc_player, G_TYPE_OBJECT)
@@ -54,11 +59,37 @@ static void clear_snapshot (ZlefsdcPlayer *self) {
   self->length_us = 0;
 }
 
+/* Read the player's Position once over D-Bus and reset the extrapolation base.
+ * Called when the track or play-state changes (not every second). */
+static void resample_position (ZlefsdcPlayer *self) {
+  gint64 pos = 0;
+  if (self->player && self->bus_name) {
+    GVariant *r = g_dbus_connection_call_sync (
+        self->bus, self->bus_name, MPRIS_PATH, "org.freedesktop.DBus.Properties",
+        "Get", g_variant_new ("(ss)", IFACE_PLAYER, "Position"),
+        G_VARIANT_TYPE ("(v)"), G_DBUS_CALL_FLAGS_NONE, 300, NULL, NULL);
+    if (r) {
+      GVariant *v = NULL;
+      g_variant_get (r, "(v)", &v);
+      if (v && g_variant_is_of_type (v, G_VARIANT_TYPE_INT64))
+        pos = g_variant_get_int64 (v);
+      if (v) g_variant_unref (v);
+      g_variant_unref (r);
+    }
+  }
+  self->pos_base_us = pos;
+  self->pos_mono0_us = g_get_monotonic_time ();
+}
+
 /* Pull the Metadata a{sv} + scalar props off the player proxy into the snapshot.
  * Returns TRUE if anything user-visible changed. */
 static gboolean refresh_from_proxies (ZlefsdcPlayer *self) {
   gboolean changed = FALSE;
   if (!self->player) return FALSE;
+
+  ZlefsdcPlayback old_pb = self->playback;
+  char *old_title = g_strdup (self->title);
+  gint64 old_len = self->length_us;
 
   GVariant *status = g_dbus_proxy_get_cached_property (self->player, "PlaybackStatus");
   ZlefsdcPlayback pb = ZLEFSDC_PLAYBACK_STOPPED;
@@ -114,6 +145,25 @@ static gboolean refresh_from_proxies (ZlefsdcPlayer *self) {
     GVariant *de = g_dbus_proxy_get_cached_property (self->root, "DesktopEntry");
     if (de) { if (set_str (&self->icon_name, g_variant_get_string (de, NULL))) changed = TRUE; g_variant_unref (de); }
   }
+
+  /* maintain the position estimate across track and play-state changes without
+   * trusting the player's live Position (Spotify often returns 0): sample once
+   * on a track change, and just freeze/resume the monotonic clock on pause/play. */
+  gboolean track_changed = (old_len != self->length_us) ||
+                           (g_strcmp0 (old_title, self->title) != 0);
+  gint64 now = g_get_monotonic_time ();
+  if (track_changed) {
+    resample_position (self);                 /* base = Get (≈0 at track start) */
+  } else if (old_pb != self->playback) {
+    if (self->playback == ZLEFSDC_PLAYBACK_PLAYING)
+      self->pos_mono0_us = now;               /* resume: keep base, restart clock */
+    else if (old_pb == ZLEFSDC_PLAYBACK_PLAYING) {
+      self->pos_base_us += now - self->pos_mono0_us;   /* pause: freeze elapsed */
+      self->pos_mono0_us = now;
+    }
+  }
+  g_free (old_title);
+
   return changed;
 }
 
@@ -244,17 +294,14 @@ gboolean         zlefsdc_player_can_prev     (ZlefsdcPlayer *s) { return s->can_
 gint64           zlefsdc_player_get_length_us(ZlefsdcPlayer *s) { return s->length_us; }
 
 gint64 zlefsdc_player_get_position_us (ZlefsdcPlayer *self) {
-  if (!self->player || !self->bus_name) return 0;
-  /* Position is NOT in PropertiesChanged, so the proxy's cached copy is frozen
-   * at creation time — always fetch a fresh value or the progress bar sticks. */
-  GVariant *v = NULL;
-  GVariant *r = g_dbus_connection_call_sync (
-      self->bus, self->bus_name, MPRIS_PATH, "org.freedesktop.DBus.Properties",
-      "Get", g_variant_new ("(ss)", IFACE_PLAYER, "Position"),
-      G_VARIANT_TYPE ("(v)"), G_DBUS_CALL_FLAGS_NONE, 300, NULL, NULL);
-  if (r) { g_variant_get (r, "(v)", &v); g_variant_unref (r); }
-  gint64 pos = v ? g_variant_get_int64 (v) : 0;
-  if (v) g_variant_unref (v);
+  if (!self->player) return 0;
+  /* Extrapolate from the last sample with a monotonic clock — robust even when
+   * the player (e.g. Spotify) reports a useless Position over D-Bus. */
+  gint64 pos = self->pos_base_us;
+  if (self->playback == ZLEFSDC_PLAYBACK_PLAYING)
+    pos += g_get_monotonic_time () - self->pos_mono0_us;
+  if (pos < 0) pos = 0;
+  if (self->length_us > 0 && pos > self->length_us) pos = self->length_us;
   return pos;
 }
 

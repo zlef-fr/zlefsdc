@@ -6,6 +6,7 @@ MediaPlayer2 + MediaPlayer2.Player interfaces (Metadata, PlaybackStatus,
 PlayPause/Next/Previous, CanGoNext/Prev) for the widget to render and drive.
 """
 import sys
+import os
 import time
 import dbus
 import dbus.service
@@ -35,6 +36,9 @@ class Player(dbus.service.Object):
         self.t0 = time.monotonic()
 
     def position(self):
+        # MOCK_BAD_POSITION=1 simulates Spotify always reporting 0 (the real bug)
+        if os.environ.get("MOCK_BAD_POSITION"):
+            return dbus.Int64(0)
         pos = self.base
         if self.status == "Playing":
             pos += int((time.monotonic() - self.t0) * 1_000_000)
