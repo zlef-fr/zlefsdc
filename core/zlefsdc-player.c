@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define MPRIS_PREFIX  "org.mpris.MediaPlayer2."
+#define MPRIS_NS      "org.mpris.MediaPlayer2"   /* arg0namespace: NO trailing dot */
 #define MPRIS_PATH    "/org/mpris/MediaPlayer2"
 #define IFACE_ROOT    "org.mpris.MediaPlayer2"
 #define IFACE_PLAYER  "org.mpris.MediaPlayer2.Player"
@@ -18,6 +19,7 @@ struct _ZlefsdcPlayer {
   GDBusProxy    *root;          /* IFACE_ROOT   */
   GDBusProxy    *player;        /* IFACE_PLAYER */
   guint          name_watch;    /* NameOwnerChanged subscription */
+  guint          retry_id;      /* re-resolve poll while unbound (startup race) */
 
   /* snapshot */
   ZlefsdcPlayback playback;
@@ -165,6 +167,20 @@ static void unbind (ZlefsdcPlayer *self) {
   clear_snapshot (self);
 }
 
+/* While no player is bound, re-resolve periodically: the panel often starts
+ * before the media player (login race) and a missed NameOwnerChanged would
+ * otherwise leave us blank until the user toggles the target. */
+static gboolean on_retry (gpointer data) {
+  ZlefsdcPlayer *self = data;
+  rebind (self);
+  if (self->bus_name) { self->retry_id = 0; return G_SOURCE_REMOVE; }
+  return G_SOURCE_CONTINUE;
+}
+static void ensure_retry (ZlefsdcPlayer *self) {
+  if (!self->bus_name && !self->retry_id)
+    self->retry_id = g_timeout_add_seconds (2, on_retry, self);
+}
+
 /* (Re)connect proxies to whichever name resolves now. */
 static void rebind (ZlefsdcPlayer *self) {
   char *name = resolve_name (self);
@@ -190,6 +206,7 @@ static void rebind (ZlefsdcPlayer *self) {
   } else if (had) {
     g_signal_emit (self, signals[SIG_VANISHED], 0);
   }
+  ensure_retry (self);          /* keep looking if still unbound */
   g_signal_emit (self, signals[SIG_CHANGED], 0);
 }
 
@@ -268,7 +285,7 @@ static void zlefsdc_player_constructed (GObject *o) {
   if (self->bus) {
     self->name_watch = g_dbus_connection_signal_subscribe (
         self->bus, "org.freedesktop.DBus", "org.freedesktop.DBus",
-        "NameOwnerChanged", "/org/freedesktop/DBus", MPRIS_PREFIX,
+        "NameOwnerChanged", "/org/freedesktop/DBus", MPRIS_NS,
         G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_NAMESPACE,
         on_name_owner_changed, self, NULL);
     rebind (self);
@@ -278,6 +295,7 @@ static void zlefsdc_player_constructed (GObject *o) {
 
 static void zlefsdc_player_finalize (GObject *o) {
   ZlefsdcPlayer *self = ZLEFSDC_PLAYER (o);
+  if (self->retry_id) { g_source_remove (self->retry_id); self->retry_id = 0; }
   if (self->bus && self->name_watch)
     g_dbus_connection_signal_unsubscribe (self->bus, self->name_watch);
   unbind (self);
