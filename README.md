@@ -47,8 +47,10 @@ change, so adding a host needs **no new rendering code**.
 
 - **Elements** — toggle cover, app icon, title, artist, album, prev, play/pause,
   next, progress independently.
-- **Layout** — free element **order**, spacing, inline vs stacked title/artist,
-  cover size (or fit-to-panel) and corner radius.
+- **Layout** — free element **order** with a nesting grammar for arbitrary rows
+  and columns (`,` = same line, `[ … ]` = a sub-group on the perpendicular axis,
+  e.g. `cover, [ info, [ prev, playpause, next ], progress ]`), spacing, inline
+  vs stacked title/artist, cover size (or fit-to-panel) and corner radius.
 - **Text** — `%t/%a/%b` format strings, artist separator, idle placeholder,
   max characters with ellipsis or **marquee** scroll, custom font and colour.
 - **Buttons** — icon size, symbolic icons, flat style.

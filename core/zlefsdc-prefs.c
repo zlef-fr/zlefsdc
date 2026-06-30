@@ -136,7 +136,7 @@ GtkWidget *zlefsdc_prefs_new (ZlefsdcSettings *settings) {
   /* Layout */
   p = new_page (nb, _("Layout"));
   add_section (p, _("Arrangement"));
-  add_row (p, _("Order (comma-separated):\ncover,icon,info,prev,playpause,next,progress"),
+  add_row (p, _("Order — “,” = same line, “[ ]” = new row/column:\ne.g. cover, [ info, [ prev, playpause, next ], progress ]"),
            str_row (settings, "layout.order"));
   add_row (p, _("Spacing (px)"),     int_row (settings, "layout.spacing", 0, 40));
   add_row (p, _("Title & artist inline"), bool_row (settings, "layout.info_inline"));

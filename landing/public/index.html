@@ -26,7 +26,7 @@
 <!--/zlef-seo-->
 <meta name="theme-color" content="#06060a">
 <link rel="stylesheet" href="https://da.zlef.fr/tokens.css">
-<link rel="stylesheet" href="/css/landing.css?v=3">
+<link rel="stylesheet" href="/css/landing.css?v=4">
 </head>
 <body class="zl-body">
 <canvas class="bg" id="bg" aria-hidden="true"></canvas>
@@ -102,8 +102,12 @@
 
   <section class="wrap section" id="settings">
     <h2 data-i18n="set_title">Control the entire render</h2>
-    <p class="sub" data-i18n="set_sub">Same widget, same settings panel — four configurations. Each of these is a real render; tweak the controls and yours updates instantly.</p>
+    <p class="sub" data-i18n="set_sub">Same widget, same settings panel. Arrange elements into rows and columns by nesting with brackets — each of these is a real render, and yours updates instantly.</p>
     <div class="examples">
+      <figure class="ex">
+        <div class="ex-shot"><img src="/assets/examples/stacked.png" alt="ZlefSDC stacked: cover on the left, title and artist on top, transport row and progress bar beneath" loading="lazy"></div>
+        <figcaption><strong data-i18n="ex_stacked_t">Rows &amp; columns</strong><span data-i18n="ex_stacked_d">Nest with brackets: cover beside a column of title, controls and progress.</span><code>cover, [ info, [ prev, playpause, next ], progress ]</code></figcaption>
+      </figure>
       <figure class="ex">
         <div class="ex-shot"><img src="/assets/examples/full.png" alt="ZlefSDC with cover, title, artist, album, transport buttons and progress bar" loading="lazy"></div>
         <figcaption><strong data-i18n="ex_full_t">Everything on</strong><span data-i18n="ex_full_d">Cover, metadata, transport and a progress bar.</span><code>order=cover,info,prev,playpause,next,progress</code></figcaption>
@@ -169,6 +173,6 @@ sudo ninja -C build install</code></pre>
 </footer>
 
 <script src="https://assets.zlef.fr/particles.js" defer></script>
-<script src="/js/i18n.js?v=3" defer></script>
+<script src="/js/i18n.js?v=4" defer></script>
 </body>
 </html>

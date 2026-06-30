@@ -325,13 +325,10 @@ static GtkWidget *make_icon (ZlefsdcWidget *self) {
 }
 
 static GtkWidget *make_progress (ZlefsdcWidget *self) {
+  /* orientation + alignment are set by build_group, which knows the line it
+   * sits on (the bar runs along the panel's main axis and fills the cross axis). */
   self->progress = gtk_progress_bar_new ();
   gtk_style_context_add_class (gtk_widget_get_style_context (self->progress), "zl-progress");
-  if (self->orientation == GTK_ORIENTATION_VERTICAL) {
-    gtk_orientable_set_orientation (GTK_ORIENTABLE (self->progress), GTK_ORIENTATION_VERTICAL);
-    gtk_progress_bar_set_inverted (GTK_PROGRESS_BAR (self->progress), TRUE);
-  }
-  gtk_widget_set_valign (self->progress, GTK_ALIGN_CENTER);
   return self->progress;
 }
 
@@ -344,6 +341,98 @@ static void clear_refs (ZlefsdcWidget *self) {
   self->progress = NULL;
 }
 
+/* Instantiate one element by token, honouring its show.* toggle. NULL = hidden
+ * or unknown. Wires up the button refs as a side effect. */
+static GtkWidget *make_element (ZlefsdcWidget *self, const char *tok) {
+  ZlefsdcSettings *s = self->settings;
+  if (g_strcmp0 (tok, "cover") == 0 && zlefsdc_settings_get_bool (s, "show.cover"))
+    return make_cover (self);
+  if (g_strcmp0 (tok, "icon") == 0 && zlefsdc_settings_get_bool (s, "show.icon"))
+    return make_icon (self);
+  if (g_strcmp0 (tok, "info") == 0 &&
+      (zlefsdc_settings_get_bool (s, "show.title") ||
+       zlefsdc_settings_get_bool (s, "show.artist") ||
+       zlefsdc_settings_get_bool (s, "show.album")))
+    return make_info (self);
+  if (g_strcmp0 (tok, "prev") == 0 && zlefsdc_settings_get_bool (s, "show.prev"))
+    return self->btn_prev = make_button (self, "media-skip-backward", G_CALLBACK (on_btn_prev));
+  if (g_strcmp0 (tok, "playpause") == 0 && zlefsdc_settings_get_bool (s, "show.playpause")) {
+    GtkWidget *b = self->btn_pp = make_button (self, "media-playback-start", G_CALLBACK (on_btn_pp));
+    self->pp_img = gtk_button_get_image (GTK_BUTTON (b));   /* toggled in update_state */
+    return b;
+  }
+  if (g_strcmp0 (tok, "next") == 0 && zlefsdc_settings_get_bool (s, "show.next"))
+    return self->btn_next = make_button (self, "media-skip-forward", G_CALLBACK (on_btn_next));
+  if (g_strcmp0 (tok, "progress") == 0 && zlefsdc_settings_get_bool (s, "show.progress"))
+    return make_progress (self);
+  return NULL;
+}
+
+/* Which axes a node wants to grow along, tracked separately so expansion
+ * propagates correctly through perpendicular nesting. */
+typedef struct { gboolean h, v; } ZlExpand;
+
+/* Recursive layout parser. Grammar over the layout.order string:
+ *   element            an element token (cover, icon, info, prev, …)
+ *   a, b, c            siblings packed along the current axis
+ *   [ ... ]            a sub-group packed on the *perpendicular* axis
+ * so rows and columns nest arbitrarily. Returns the axes this group wants to
+ * expand along; *pp advances to the matching ']' or end of string. */
+static ZlExpand build_group (ZlefsdcWidget *self, GtkWidget *box,
+                             GtkOrientation orient, const char **pp) {
+  ZlExpand acc = { FALSE, FALSE };
+  int spacing = zlefsdc_settings_get_int (self->settings, "layout.spacing");
+  const char *p = *pp;
+  char tok[32];
+
+  while (*p) {
+    while (*p == ' ' || *p == '\t' || *p == ',') p++;
+    if (*p == '\0' || *p == ']') { if (*p == ']') p++; break; }
+
+    GtkWidget *child = NULL;
+    ZlExpand ce = { FALSE, FALSE };
+
+    if (*p == '[') {                       /* perpendicular sub-group */
+      p++;
+      GtkOrientation child_o = (orient == GTK_ORIENTATION_HORIZONTAL)
+                             ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+      child = gtk_box_new (child_o, spacing);
+      ce = build_group (self, child, child_o, &p);
+    } else {
+      int n = 0;                           /* read an element identifier */
+      while (g_ascii_isalpha (*p) && n < (int) sizeof tok - 1) tok[n++] = *p++;
+      tok[n] = '\0';
+      if (n == 0) { p++; continue; }       /* skip stray punctuation */
+
+      child = make_element (self, tok);
+      if (!child) continue;
+
+      if (g_strcmp0 (tok, "info") == 0) {
+        ce.h = TRUE;                        /* text wants horizontal room */
+      } else if (g_strcmp0 (tok, "progress") == 0) {
+        /* the bar runs along the panel's main axis, wherever it's nested */
+        gtk_orientable_set_orientation (GTK_ORIENTABLE (child), self->orientation);
+        gtk_progress_bar_set_inverted (GTK_PROGRESS_BAR (child),
+                                       self->orientation == GTK_ORIENTATION_VERTICAL);
+        ce.h = (self->orientation == GTK_ORIENTATION_HORIZONTAL);
+        ce.v = (self->orientation == GTK_ORIENTATION_VERTICAL);
+      }
+    }
+
+    /* propagate expand to the widget so GTK fills the cross axis, and use the
+     * main-axis component as the box "expand" so it shares extra length. */
+    gtk_widget_set_hexpand (child, ce.h);
+    gtk_widget_set_vexpand (child, ce.v);
+    gboolean main_expand = (orient == GTK_ORIENTATION_HORIZONTAL) ? ce.h : ce.v;
+    gtk_box_pack_start (GTK_BOX (box), child, main_expand, TRUE, 0);
+
+    acc.h = acc.h || ce.h;
+    acc.v = acc.v || ce.v;
+  }
+  *pp = p;
+  return acc;
+}
+
 static void rebuild (ZlefsdcWidget *self) {
   if (self->box) gtk_widget_destroy (self->box);
   clear_refs (self);
@@ -353,37 +442,9 @@ static void rebuild (ZlefsdcWidget *self) {
   gtk_container_add (GTK_CONTAINER (self), self->box);
 
   const char *order = zlefsdc_settings_get_string (self->settings, "layout.order");
-  char **tokens = g_strsplit (order && *order ? order : "cover,icon,info,prev,playpause,next,progress", ",", -1);
-
-  for (int i = 0; tokens[i]; i++) {
-    char *tok = g_strstrip (tokens[i]);
-    GtkWidget *el = NULL;
-    if (g_strcmp0 (tok, "cover") == 0 && zlefsdc_settings_get_bool (self->settings, "show.cover"))
-      el = make_cover (self);
-    else if (g_strcmp0 (tok, "icon") == 0 && zlefsdc_settings_get_bool (self->settings, "show.icon"))
-      el = make_icon (self);
-    else if (g_strcmp0 (tok, "info") == 0 &&
-             (zlefsdc_settings_get_bool (self->settings, "show.title") ||
-              zlefsdc_settings_get_bool (self->settings, "show.artist") ||
-              zlefsdc_settings_get_bool (self->settings, "show.album")))
-      el = make_info (self);
-    else if (g_strcmp0 (tok, "prev") == 0 && zlefsdc_settings_get_bool (self->settings, "show.prev"))
-      el = self->btn_prev = make_button (self, "media-skip-backward", G_CALLBACK (on_btn_prev));
-    else if (g_strcmp0 (tok, "playpause") == 0 && zlefsdc_settings_get_bool (self->settings, "show.playpause")) {
-      el = self->btn_pp = make_button (self, "media-playback-start", G_CALLBACK (on_btn_pp));
-      self->pp_img = gtk_button_get_image (GTK_BUTTON (self->btn_pp));  /* toggled in update_state */
-    }
-    else if (g_strcmp0 (tok, "next") == 0 && zlefsdc_settings_get_bool (self->settings, "show.next"))
-      el = self->btn_next = make_button (self, "media-skip-forward", G_CALLBACK (on_btn_next));
-    else if (g_strcmp0 (tok, "progress") == 0 && zlefsdc_settings_get_bool (self->settings, "show.progress"))
-      el = make_progress (self);
-
-    if (el) {
-      gboolean expand = (g_strcmp0 (tok, "info") == 0 || g_strcmp0 (tok, "progress") == 0);
-      gtk_box_pack_start (GTK_BOX (self->box), el, expand, expand, 0);
-    }
-  }
-  g_strfreev (tokens);
+  if (!order || !*order) order = "cover,icon,info,prev,playpause,next,progress";
+  const char *p = order;
+  build_group (self, self->box, self->orientation, &p);
 
   gtk_widget_show_all (self->box);
   apply_style (self);
