@@ -1,5 +1,7 @@
 # ZlefSDC — Spotify Display Controls
 
+![views](https://assets.zlef.fr/badge/views/zlef-fr/zlefsdc.svg)
+
 A panel widget that shows the **current Spotify track** (cover · app icon · title ·
 artist · album) with **transport controls** (◀ play/pause ▶), plus an optional
 progress bar — and a *very* permissive settings surface so you control exactly
